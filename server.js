@@ -36,10 +36,21 @@ app.get('/',(req,res)=>{
 })
 
 app.post('/add', (req,res)=> {
-
     res.send('전송완ryo')
-    db.collection('post').insertOne({title:req.body.title, date: req.body.date}, ()=> {
-        console.log('title date save')
+    
+    db.collection('counter').findOne({name: 'postLength'}, (err,result)=>{
+        console.log(result.totalPost)
+        let totalLength = result.totalPost
+
+        db.collection('post').insertOne({_id: totalLength+1, title:req.body.title, date: req.body.date}, ()=> {
+            console.log('title date save')
+            db.collection('counter').updateOne({name: 'postLength'},{$inc:{totalPost:1}},(err,count)=>{
+                // set 은 오퍼레이터로 값을 완전히 변경할때 사용
+                // inc 은 증가시켜주세요의 약자임 -> 1 씩 증가 , 음수도 가능
+                if (err) { return console.error(err)}
+            })
+        })
+        
     })
     console.log(req.body.title)
 })
@@ -51,4 +62,14 @@ app.get('/list', (req,res)=> {
         res.render('list.ejs',{posts: result})
     }); //다 찾는 방식
    
+})
+
+app.delete('/delete',(req,res)=> {
+    console.log(req.body) // ajax에서 보낸 data
+    req.body._id = parseInt(req.body._id)
+    db.collection('post').deleteOne(req.body,(err,result)=> {
+        if (err){ return console.error(err)}
+
+        res.status(200).send({message: '성공'}); //응답코드 200을 보내주세요 400은 요청 잘못 500이면 서버 잘못
+    })
 })
